@@ -14,7 +14,7 @@ class nativeBayesClassifier:
         # 从文件中读取数据
         self.format = dataFormat.strip().split('\t')
         # 先验概率
-        slef.prior = {}
+        self.prior = {}
         # 条件概率
         self.conditiational = {}
 
@@ -22,7 +22,7 @@ class nativeBayesClassifier:
         for i in range(1,11):
             # 跳过测试桶
             if i != testBucketNumber:
-                filename = "%s-%2i" % (bucketPrefix,i)
+                filename = "%s-%02i" % (bucketPrefix,i)
                 f = open(filename)
                 lines = f.readlines()
                 f.close()
@@ -57,15 +57,43 @@ class nativeBayesClassifier:
         # 记数结束，开始计算概率
 
         # 计算先验概率P(h)
-        for category,count) in classes.items():
-            slef.prior{category} = count / total
+        for (category,count) in classes.items():
+            self.prior[category] = count / total
 
         # 计算条件概率
         for (category,columns) in counts.items():
-            slef.conditiational.setdefault(category,{})
+            self.conditiational.setdefault(category,{})
             for(col,valueCounts) in columns.items():
                 self.conditiational[category].setdefault(col,{})
                 for (attr,columnValue) in valueCounts.items():
                     self.conditiational[category][col][attr] = (columnValue / classes[category])
 
         self.tmp = counts
+
+    # 进行分类
+    def classify(self,vector):
+        """返回vector所属的类别"""
+        results = []
+
+        for (category,prior) in self.prior.items():
+            # print((category,prior))
+            prob = prior
+            col = 1
+            for attrValue in vector:
+                # print(self.conditiational[category][col])
+                if not attrValue in self.conditiational[category][col]:
+                    # 属性不存在，返回规律值为0
+                    prob = 0
+                else:
+                    # 所有特征值的条件概率乘积
+                    prob = prob * self.conditiational[category][col][attrValue]
+                col += 1
+            results.append((prob,category))
+        print(results)
+        return max(results)[1]
+
+# 测试
+c = nativeBayesClassifier('./data/iHealth/i', 10, 'attr\tattr\tattr\tattr\tclass')
+test=c.classify(['health','moderate', 'moderate', 'yes'])
+print(test)
+
