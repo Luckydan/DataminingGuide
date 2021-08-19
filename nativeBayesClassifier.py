@@ -86,6 +86,8 @@ class nativeBayesClassifier:
         # 条件概率
         self.conditiational = {}
 
+        self.attrs ={}
+
         # 遍历十个桶
         for i in range(1,11):
             # 跳过测试桶
@@ -127,6 +129,9 @@ class nativeBayesClassifier:
                         counts[category].setdefault(col,{})
                         counts[category][col].setdefault(columnValue,0)
                         counts[category][col][columnValue] += 1
+                        self.attrs.setdefault(col,{})
+                        self.attrs[col].setdefault(columnValue,0)
+                        self.attrs[col][columnValue] +=1
 
                     # 处理数值型的各个特征值
                     col = 0
@@ -150,7 +155,9 @@ class nativeBayesClassifier:
             for(col,valueCounts) in columns.items():
                 self.conditiational[category].setdefault(col,{})
                 for (attr,columnValue) in valueCounts.items():
-                    self.conditiational[category][col][attr] = (columnValue / classes[category])
+                    # 优化概率为0的情况，详细内容见笔记
+                    # self.conditiational[category][col][attr] = ((columnValue + 1) / (classes[category] + self.attrs[col][attr]))
+                    self.conditiational[category][col][attr] = ((columnValue) / (classes[category]))
 
         self.tmp = counts
 
@@ -175,6 +182,8 @@ class nativeBayesClassifier:
                 columns[col] = 0
                 self.ssd[category][col] = math.sqrt(SumOfSquareDifferences / (classes[category] -1))
 
+        print(self.attrs)
+        print(self.tmp)
 
 
     # 进行分类
@@ -210,10 +219,10 @@ class nativeBayesClassifier:
         return max(results)[1]
 
 # 测试
-# c = nativeBayesClassifier('./data/iHealth/i', 10, 'attr\tattr\tattr\tattr\tclass')
-# test=c.classify(['health','moderate', 'moderate', 'yes'])
-# print(test)
-
-c = nativeBayesClassifier('./data/pimaSmall/pimaSmall', 1, 'num\tnum\tnum\tnum\tnum\tnum\tnum\tnum\tclass')
-test=c.classify([],[4,110,76,20,100,28.4,0.118,27])
+c = nativeBayesClassifier('./data/iHealth/i', 10, 'attr\tattr\tattr\tattr\tclass')
+test=c.classify(['health','moderate', 'moderate', 'yes'],[])
 print(test)
+
+# c = nativeBayesClassifier('./data/pimaSmall/pimaSmall', 1, 'num\tnum\tnum\tnum\tnum\tnum\tnum\tnum\tclass')
+# test=c.classify([],[4,110,76,20,100,28.4,0.118,27])
+# print(test)
